@@ -82,6 +82,40 @@
 
 ---
 
+### Workload Resources
+**Status:** Deep dive complete
+**Topics covered:**
+- Deployments (stateless applications)
+- Deployment → ReplicaSet → Pod hierarchy
+- Deployment Controller and ReplicaSet Controller watch loops
+- Rolling update mechanism (maxUnavailable, maxSurge)
+- Why Deployments use ReplicaSets (enables versioning and rollback)
+- StatefulSets (stateful applications with stable identity)
+- Stable pod names (postgres-0, postgres-1) vs random names
+- Stable DNS names that persist across node moves
+- Pod IPs still change when rescheduled (only DNS names are stable)
+- Headless Services (ClusterIP: None, returns pod IPs directly)
+- Ordered operations (scale up/down, updates)
+- PersistentVolumeClaims for storage that follows pods
+- When to use Deployments vs StatefulSets
+- Resource requests and limits (CPU, memory)
+- How Scheduler uses requests for placement decisions
+- How kubelet enforces limits via Linux cgroups
+- CPU throttling vs memory OOMKill
+- cgroups v1 and v2 architecture
+- CFS bandwidth control (period/quota for CPU)
+- Integration with Ingress/ALB (Endpoints Controller updates regardless of workload type)
+
+**Gaps identified:**
+- DaemonSets (one pod per node)
+- Jobs and CronJobs (batch workloads)
+- Deployment strategies (Recreate vs RollingUpdate)
+- StatefulSet update strategies (OnDelete, RollingUpdate)
+- Pod Disruption Budgets
+- HorizontalPodAutoscaler (HPA)
+
+---
+
 ## Surface-Level Knowledge (No Deep Dive Yet) 📖
 
 ### Service Types
@@ -98,13 +132,6 @@
 ---
 
 ## Not Yet Covered ⏳
-
-### Workload Resources
-- Deployments
-- ReplicaSets
-- StatefulSets (for databases)
-- DaemonSets
-- Jobs and CronJobs
 
 ### Configuration and Secrets
 - ConfigMaps
@@ -141,12 +168,12 @@
 
 ## Next Deep Dive
 
-**Target:** Workload Resources - Deployments and StatefulSets (20 min)
-**Why:** Need to understand how to deploy and manage applications (web app + database)
-**Prerequisites:** Service networking ✅, Ingress ✅, DNS ✅
-
-**After that:** Configuration and Secrets (15 min)
+**Target:** Configuration and Secrets (15 min)
 **Why:** Manage application configuration and sensitive data (database credentials, API keys)
+**Prerequisites:** Workload Resources ✅
+
+**After that:** Storage / Persistent Volumes (20 min)
+**Why:** StatefulSets need persistent storage for databases, need to understand PV/PVC/StorageClass
 
 ---
 

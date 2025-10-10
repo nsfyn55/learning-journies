@@ -142,14 +142,62 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
   - kube-proxy then translates ClusterIP → Pod IP via iptables
   - Two-layer translation: DNS (name→ClusterIP) + iptables (ClusterIP→Pod IP)
 
----
+### Workload Resources (Deep Dive)
+- **The Problem Workload Resources Solve:**
+  - Need automated pod lifecycle management
+  - Need multiple replicas for high availability
+  - Need rolling updates and rollbacks
+  - Databases need stable identity and persistent storage
 
-## Topics In Progress 🔄
+- **Deployments (Stateless Apps):**
+  - Three-tier hierarchy: Deployment → ReplicaSet → Pods
+  - Deployment Controller watches Deployments, creates/updates ReplicaSets
+  - ReplicaSet Controller watches ReplicaSets, creates/deletes Pods to match replica count
+  - Rolling updates create new ReplicaSet, gradually scale up/down
+  - Old ReplicaSet kept (scaled to 0) for easy rollback
+  - Strategy parameters: maxUnavailable, maxSurge
 
-### Service Types
-- ClusterIP (covered basics)
-- NodePort (not covered)
-- LoadBalancer (not covered)
+- **StatefulSets (Stateful Apps):**
+  - Stable pod names: postgres-0, postgres-1 (not random hashes)
+  - Stable DNS names: postgres-0.postgres.default.svc.cluster.local
+  - **Pod IPs still change** when rescheduled to different nodes (only DNS is stable!)
+  - Requires Headless Service (ClusterIP: None) for direct pod addressing
+  - DNS returns all pod IPs directly (no load balancing)
+  - Ordered operations: scale up 0→1→2, scale down 2→1→0
+  - PersistentVolumeClaims follow pods across rescheduling
+  - Used for databases, message queues, any stateful workload
+
+- **Resource Requests and Limits:**
+  - Requests: Minimum guaranteed resources (used by Scheduler for placement)
+  - Limits: Maximum allowed resources (enforced by kubelet via cgroups)
+  - CPU units: millicores (1000m = 1 core, 100m = 10% of core)
+  - Memory units: Mi/Gi (binary) or M/G (decimal)
+
+- **How Scheduler Uses Requests:**
+  - Filters nodes with insufficient available resources
+  - Scores nodes based on remaining capacity
+  - Places pod on best-fit node
+
+- **How kubelet Enforces Limits (Linux cgroups):**
+  - CPU: CFS bandwidth control (period/quota), throttling when exceeded
+  - Memory: Hard limit, OOMKill when exceeded (process killed, container restarted)
+  - cgroups v1: Separate hierarchies (cpu, memory)
+  - cgroups v2: Unified hierarchy
+  - kubelet writes to /sys/fs/cgroup files to configure limits
+
+- **Integration with Ingress/ALB:**
+  - Endpoints Controller watches Pods (regardless of Deployment/StatefulSet)
+  - Updates Endpoints object when pod IPs change
+  - AWS Load Balancer Controller watches Endpoints
+  - Automatically updates ALB Target Groups when pods move nodes
+  - Same watch-and-reconcile pattern!
+
+- **Key Insights:**
+  - Deployments use ReplicaSets for versioning (each update = new ReplicaSet)
+  - StatefulSets provide stable **names**, not stable **IPs**
+  - DNS enables StatefulSet pods to be addressed individually
+  - Resource limits are enforced by Linux kernel, not Kubernetes
+  - CPU is compressible (throttle), memory is incompressible (kill)
 
 ---
 
@@ -171,22 +219,17 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
 - IPVS mode details
 - eBPF-based networking
 - Service Mesh (Istio, Linkerd)
-- Persistent Volumes and Storage
-- StatefulSets for databases
-- ConfigMaps and Secrets
+- DaemonSets (per-node agents)
+- Jobs and CronJobs (batch workloads)
+- Pod Disruption Budgets
+- HorizontalPodAutoscaler (HPA)
 - RBAC and security
 
 ---
 
 ## Next Steps
 
-**Immediate:** Workload Resources - Deployments and StatefulSets (20 min)
-- Need to understand how to deploy and manage applications
-- Deployments for web apps (stateless)
-- StatefulSets for databases (stateful with persistent storage)
-- Required to actually build the web app/db stack
-
-**Then:** Configuration and Secrets (15 min)
+**Immediate:** Configuration and Secrets (15 min)
 - ConfigMaps for application configuration
 - Secrets for sensitive data
 - Environment variables and volume mounts
@@ -239,6 +282,13 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
    - Prometheus watches Pods/Services/Endpoints/Nodes
    - Controllers watch their relevant resources
    - NOT polling - event-driven push over long-lived connections
+
+8. **Workload Resources = Pod Lifecycle Management**
+   - Deployments: For stateless apps, rolling updates, random pod names
+   - StatefulSets: For stateful apps, stable DNS names (NOT stable IPs!), ordered ops
+   - Deployment → ReplicaSet → Pods (enables versioning and rollback)
+   - Resource limits enforced by Linux kernel (cgroups), not Kubernetes
+   - CPU = compressible (throttle), Memory = incompressible (kill)
 
 ---
 
