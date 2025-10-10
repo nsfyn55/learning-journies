@@ -71,23 +71,11 @@ As of 2025-10-10:
 - Pod Networking: 🟢 Strong (95%)
 - Ingress Controllers: 🟢 Strong (95%)
 
-**Scoring System:**
-- 🟢 Strong (90-100%): Ready to explain to colleagues
-- 🟡 Good (70-89%): Solid understanding with minor gaps
-- 🟠 Fair (50-69%): Basics understood, needs review
-- 🔴 Needs Review (<50%): Significant gaps, requires re-study
+## 🚀 Implementation Roadmap
 
-## 🚀 Getting Started
-
-This repository currently contains learning documentation. As the project progresses:
+As learning progresses into implementation:
 
 1. **Terraform Phase**: Add EKS cluster infrastructure code
 2. **Application Phase**: Add Kubernetes manifests for web app/db stack
 3. **Observability Phase**: Add Prometheus and Grafana deployment configurations
 4. **SLO Phase**: Define and implement Service Level Objectives
-
-## 📝 Learning Strategy
-
-- **Deep Dive** = 30+ min focused study with hands-on practice
-- **Surface Level** = Basic understanding of what it is and when to use it
-- **Retention Exercise** = Explain concept back without notes, get feedback
