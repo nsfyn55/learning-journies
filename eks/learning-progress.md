@@ -93,6 +93,55 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
   - Deployment updates → rolling replacement (all new pods, new IPs)
   - Node failure → pods rescheduled elsewhere (new pods, new IPs)
 
+### DNS / Service Discovery (Deep Dive)
+- **The Problem DNS Solves:**
+  - Services provide stable ClusterIPs, but apps need name-based discovery
+  - Hard-coding IPs is brittle
+  - Need automatic resolution of service names
+
+- **CoreDNS Architecture:**
+  - Runs as Pods (Deployment with 2+ replicas for HA)
+  - Exposed via Service with ClusterIP (e.g., 10.100.0.10)
+  - Lives in kube-system Kubernetes namespace
+  - Watches API server for Service changes
+
+- **How Pod DNS Works:**
+  - kubelet writes /etc/resolv.conf in every pod
+  - nameserver points to CoreDNS ClusterIP
+  - search domains enable short names in same namespace
+
+- **DNS Naming Convention:**
+  - Full format: `<service>.<namespace>.svc.cluster.local`
+  - Short name works in same namespace: `postgres`
+  - Cross-namespace requires namespace: `grafana.monitoring`
+
+- **DNS vs API-Based Discovery:**
+  - DNS: name → Service ClusterIP (for app-to-app communication)
+  - API-based: dynamic discovery of all resources (for Prometheus, controllers)
+
+- **Prometheus Service Discovery:**
+  - Uses `kubernetes_sd_configs` in Prometheus config (stored in ConfigMap)
+  - Watches API server for pods, services, endpoints, nodes
+  - Can't use DNS (DNS only returns ClusterIPs, not individual pod IPs)
+  - Relabeling rules filter targets (e.g., annotation-based)
+
+- **Watch Mechanism (HTTP Protocol Level):**
+  - NOT polling - event-driven push using HTTP streaming
+  - Uses HTTP/1.1 chunked transfer encoding (RFC 7230)
+  - Single long-lived connection per watcher
+  - API server pushes events immediately as they occur
+  - All components use same pattern: CoreDNS, kube-proxy, Prometheus, controllers
+
+- **Two Types of Namespaces:**
+  - Linux kernel namespaces: network isolation for pods (network, PID, mount, etc.)
+  - Kubernetes namespaces: logical grouping of API resources (default, kube-system, etc.)
+  - Every pod has both: lives in K8s namespace AND has own Linux network namespace
+
+- **Key Insight:**
+  - DNS returns Service ClusterIPs (never Pod IPs)
+  - kube-proxy then translates ClusterIP → Pod IP via iptables
+  - Two-layer translation: DNS (name→ClusterIP) + iptables (ClusterIP→Pod IP)
+
 ---
 
 ## Topics In Progress 🔄
@@ -107,18 +156,7 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
 ## Topics Not Yet Covered ⏳
 
 ### Critical for Observability Platform
-1. **Ingress and Ingress Controllers** (HIGH PRIORITY)
-   - Path/host-based HTTP routing
-   - AWS Load Balancer Controller
-   - Exposing Grafana to users
-   - Single LB for multiple services
-
-2. **DNS / Service Discovery** (HIGH PRIORITY)
-   - CoreDNS
-   - How pods resolve service names
-   - Prometheus service discovery
-
-3. **Service Types Deep Dive** (MEDIUM PRIORITY)
+1. **Service Types Deep Dive** (MEDIUM PRIORITY)
    - NodePort services
    - LoadBalancer services
    - ExternalName services
@@ -142,18 +180,21 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
 
 ## Next Steps
 
-**Immediate:** Learn Ingress and Ingress Controllers (30 min)
-- Most practical for exposing Grafana
-- Builds on Service networking knowledge
-- Required for real-world deployments
+**Immediate:** Workload Resources - Deployments and StatefulSets (20 min)
+- Need to understand how to deploy and manage applications
+- Deployments for web apps (stateless)
+- StatefulSets for databases (stateful with persistent storage)
+- Required to actually build the web app/db stack
 
-**Then:** DNS basics (15 min)
-- Essential for Prometheus service discovery
-- Understanding how services are discovered
+**Then:** Configuration and Secrets (15 min)
+- ConfigMaps for application configuration
+- Secrets for sensitive data
+- Environment variables and volume mounts
 
-**After:** Complete service types (10 min)
-- LoadBalancer for external access
-- Understanding when to use each type
+**After:** Storage / Persistent Volumes (20 min)
+- Persistent Volumes (PV) and Persistent Volume Claims (PVC)
+- Storage Classes
+- StatefulSet storage requirements for databases
 
 ---
 
@@ -185,12 +226,27 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
    - No central bottleneck for networking
    - Fast and resilient
 
+6. **DNS Sits on Top**
+   - CoreDNS gets first crack at all DNS queries
+   - Authoritative for *.cluster.local domains
+   - Forwarder for external domains
+   - Two-layer translation: DNS (name→ClusterIP) + iptables (ClusterIP→Pod IP)
+
+7. **Watch Pattern is Universal**
+   - All components use same mechanism: HTTP streaming with chunked transfer encoding
+   - CoreDNS watches Services
+   - kube-proxy watches Services + Endpoints
+   - Prometheus watches Pods/Services/Endpoints/Nodes
+   - Controllers watch their relevant resources
+   - NOT polling - event-driven push over long-lived connections
+
 ---
 
 ## Questions to Revisit Later
 
 - When to use IPVS vs iptables mode?
-- How does Prometheus actually discover services?
 - Best practices for Network Policies?
 - How to size node pools for observability workloads?
 - What metrics should we collect from the cluster itself?
+- How does Prometheus Operator work vs manual Prometheus deployment?
+- ConfigMap size limits and best practices for large configurations?

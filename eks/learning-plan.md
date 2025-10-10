@@ -61,6 +61,27 @@
 
 ---
 
+### DNS / Service Discovery
+**Status:** Deep dive complete
+**Topics covered:**
+- Problem DNS solves (name-based discovery vs hard-coded IPs)
+- CoreDNS architecture (Service + Pods in kube-system, watches API)
+- How pod DNS works (/etc/resolv.conf, nameserver, search domains)
+- DNS naming convention (`<service>.<namespace>.svc.cluster.local`)
+- Short names (same namespace) vs cross-namespace requirements
+- DNS vs API-based discovery (name resolution vs dynamic discovery)
+- Prometheus service discovery (`kubernetes_sd_configs`, relabeling)
+- Watch mechanism at HTTP protocol level (chunked transfer encoding, RFC 7230)
+- Two types of namespaces (Linux kernel vs Kubernetes API)
+- Complete DNS flow: name → CoreDNS → ClusterIP → kube-proxy → Pod IP
+
+**Gaps identified:**
+- Prometheus Operator vs manual Prometheus deployment
+- ConfigMap size limits for large Prometheus configurations
+- Advanced CoreDNS configurations and customizations
+
+---
+
 ## Surface-Level Knowledge (No Deep Dive Yet) 📖
 
 ### Service Types
@@ -68,12 +89,6 @@
 - NodePort: Mentioned, explored in context of Ingress Instance mode
 - LoadBalancer: Mentioned, explored in context of Ingress problem space
 - ExternalName: Not covered
-
-### DNS / Service Discovery
-- HIGH PRIORITY for Prometheus
-- CoreDNS
-- Service name resolution
-- Prometheus service discovery
 
 ### Network Policies
 - Pod-to-pod traffic restrictions
@@ -126,12 +141,12 @@
 
 ## Next Deep Dive
 
-**Target:** DNS / Service Discovery (15 min)
-**Why:** Essential for Prometheus service discovery, understanding how pods resolve service names
-**Prerequisites:** Service networking ✅, Ingress ✅
+**Target:** Workload Resources - Deployments and StatefulSets (20 min)
+**Why:** Need to understand how to deploy and manage applications (web app + database)
+**Prerequisites:** Service networking ✅, Ingress ✅, DNS ✅
 
-**After that:** Workload Resources - Deployments (20 min)
-**Why:** Need to understand how to actually deploy and manage your applications
+**After that:** Configuration and Secrets (15 min)
+**Why:** Manage application configuration and sensitive data (database credentials, API keys)
 
 ---
 
@@ -269,6 +284,44 @@ Pod A → Service ClusterIP → kube-proxy iptables → Pod B IP
 
 ---
 
+### DNS / Service Discovery
+**Score: 🟢 Strong (98%)**
+
+**Learning journey:**
+- Initial explanation: 🟡 75-85% - Good concepts, missing some details
+- After deep dive: 🟢 98% - Exceptional retention!
+
+**What you nailed (second attempt):**
+- DNS returns Service ClusterIPs, never Pod IPs ✅
+- CoreDNS architecture: Service + Pods in kube-system, watches API server ✅
+- Two-layer translation: DNS (name→ClusterIP) + iptables (ClusterIP→Pod IP) ✅
+- Prometheus uses API queries (not DNS) because it needs individual pod IPs ✅
+- `kubernetes_sd_configs` watches API server for pods ✅
+- Relabeling filters targets based on annotations/labels ✅
+- Watch mechanism is NOT polling - event-driven HTTP streaming ✅
+- Distinction between Linux kernel namespaces vs Kubernetes namespaces ✅
+
+**Initial gaps corrected:**
+- ❌ First attempt: Said DNS returns "postgres pod cluster IP" (confused terminology)
+- ✅ Correction: DNS returns Service ClusterIP, Services have ClusterIPs (not pods)
+- ❌ First attempt: Fuzzy on how Prometheus discovers pods
+- ✅ Correction: Explicitly stated it watches API server via `kubernetes_sd_configs`
+
+**Deep dive bonus:**
+- Asked clarifying questions about HTTP protocol (chunked transfer encoding) ✅
+- Distinguished Kubernetes namespaces from Linux network namespaces ✅
+- Understood CoreDNS is authoritative for *.cluster.local, forwarder for external ✅
+- Recognized `kubernetes_sd_configs` is Prometheus config stored in ConfigMap ✅
+
+**Key insight mastered:**
+> "CoreDNS sits on top of the resolution stack. It gets the first crack at resolution."
+
+Perfect mental model! Shows understanding of DNS hierarchy and forwarding.
+
+**Result:** Colleague-ready explanation. Could explain DNS flow and Prometheus service discovery to your team today!
+
+---
+
 ### Overall Assessment
 
 **Strengths:**
@@ -286,6 +339,9 @@ Pod A → Service ClusterIP → kube-proxy iptables → Pod B IP
 - Service request flow (client → ClusterIP → pod)
 - What happens when a pod dies and gets recreated
 - External request flow through Ingress (internet → ALB → pod)
+- DNS resolution flow (app queries service name → DNS → ClusterIP → pod)
+- Explain why Prometheus can't use DNS for pod discovery
+- Trace a watch connection from component to API server to etcd
 
 ---
 
