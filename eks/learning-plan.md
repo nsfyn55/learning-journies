@@ -116,6 +116,34 @@
 
 ---
 
+### ConfigMaps and Secrets
+**Status:** Deep dive complete
+**Topics covered:**
+- Problem solved: Externalize configuration from application code/images
+- Two consumption methods: environment variables and volume mounts
+- ConfigMaps for non-sensitive config, Secrets for sensitive data
+- Storage in etcd: ConfigMaps as plaintext, Secrets as base64 encoded
+- Base64 encoding reasons: binary data support, character safety, etcd storage, API transport
+- Base64 is NOT security - trivial to decode
+- Secret types: Opaque (default, no validation), TLS, basic-auth, dockerconfigjson
+- Opaque type: catch-all for arbitrary key-value pairs, no structure requirements
+- AWS Secrets Manager integration patterns
+- External Secrets Operator: syncs from AWS to K8s Secrets (stored in etcd)
+- CSI Driver: mounts directly from AWS, never stored in etcd (most secure)
+- IRSA (IAM Roles for Service Accounts) for AWS authentication
+- Security: etcd encryption at rest, RBAC, external secret managers
+- Lifecycle: file mounts auto-update, env vars require pod restart
+- Rolling restarts for credential rotation (kubectl rollout restart)
+- Operators pattern: custom controllers for custom resources (CRDs)
+
+**Gaps identified:**
+- etcd encryption at rest configuration
+- Advanced External Secrets Operator features (multi-region, failover)
+- CSI driver performance implications
+- Secret rotation strategies and best practices
+
+---
+
 ## Surface-Level Knowledge (No Deep Dive Yet) 📖
 
 ### Service Types
@@ -132,12 +160,6 @@
 ---
 
 ## Not Yet Covered ⏳
-
-### Configuration and Secrets
-- ConfigMaps
-- Secrets
-- Environment variables
-- Volume mounts
 
 ### Storage
 - Persistent Volumes (PV)
@@ -166,20 +188,95 @@
 
 ---
 
-## Next Deep Dive
+## Learning Pace
 
-**Target:** Configuration and Secrets (15 min)
-**Why:** Manage application configuration and sensitive data (database credentials, API keys)
-**Prerequisites:** Workload Resources ✅
+**Target:** 2 topics per day
+**Core fundamentals remaining:** 8 topics = 4 days
+**Optional expertise topics:** 13 topics = 6-7 days
+**Total to K8s mastery:** 2-3 weeks
 
-**After that:** Storage / Persistent Volumes (20 min)
-**Why:** StatefulSets need persistent storage for databases, need to understand PV/PVC/StorageClass
+---
+
+## Core Fundamentals Roadmap (Essential - 15 Topics Total)
+
+### ✅ Completed (7/15) - 47%
+1. Kubernetes Architecture
+2. Pod Networking
+3. Service Networking
+4. Ingress Controllers
+5. DNS / Service Discovery
+6. Workload Resources
+7. ConfigMaps and Secrets
+
+### 🔄 Remaining (8/15) - Target: 4 Days
+
+**Day 1 (cont.):**
+8. Health Checks and Lifecycle (15-20 min) - Liveness, readiness, graceful shutdown
+
+**Day 2:**
+9. Storage Fundamentals (25-30 min) - PV, PVC, StorageClasses
+10. RBAC and ServiceAccounts (20-25 min) - Security and permissions
+
+**Day 3:**
+11. Pod Security (15-20 min) - SecurityContext, Pod Security Standards
+12. Network Policies (20-25 min) - Network isolation and firewall rules
+
+**Day 4:**
+13. Advanced Scheduling (20-25 min) - Affinity, taints, tolerations
+14. Resource Management (15-20 min) - Quotas, LimitRanges, QoS
+
+**Day 5:**
+15. Disruptions and Availability (15-20 min) - PodDisruptionBudgets, high availability
+
+---
+
+## Optional Topics for Deep Expertise (13 Topics)
+
+### Advanced Workloads (Day 6)
+16. DaemonSets (10-15 min)
+17. Jobs and CronJobs (15-20 min)
+
+### Autoscaling (Day 7-8)
+18. Horizontal Pod Autoscaling - HPA (20-25 min)
+19. Vertical Pod Autoscaling - VPA (15-20 min)
+20. Cluster Autoscaler (15-20 min)
+
+### Service Types (Day 8-9)
+21. NodePort and LoadBalancer Services (10-15 min)
+22. ExternalName and Headless Services (10-15 min)
+
+### Advanced Networking (Day 9-10)
+23. IPVS Mode (15-20 min)
+24. Multi-cluster Networking (20-25 min) - Optional
+
+### Extension Points (Day 10-12)
+25. Custom Resource Definitions - CRDs (20-25 min)
+26. Operators Pattern (25-30 min)
+27. Admission Controllers (20-25 min)
+
+### API Internals (Day 12)
+28. Kubernetes API Deep Dive (20-25 min)
+
+---
+
+## Milestones
+
+**Milestone 1 (Day 5):** Complete K8s Core Fundamentals ✅
+- Can deploy and manage any application on Kubernetes
+- Ready to build observability platform
+
+**Milestone 2 (Day 12):** Kubernetes Expert ✅
+- Deep understanding of K8s internals
+- Can extend and customize Kubernetes
+- Platform engineering level knowledge
+
+**After Milestone 1:** Begin Prometheus/Grafana/SLO implementation
 
 ---
 
 ## Retention Scores 📊
 
-**Date: 2025-10-10**
+**Date: 2025-10-11**
 
 ### Control Plane Architecture
 **Score: 🟡 Good (75%)**
@@ -346,6 +443,43 @@ Pod A → Service ClusterIP → kube-proxy iptables → Pod B IP
 Perfect mental model! Shows understanding of DNS hierarchy and forwarding.
 
 **Result:** Colleague-ready explanation. Could explain DNS flow and Prometheus service discovery to your team today!
+
+---
+
+### ConfigMaps and Secrets
+**Score: 🟢 Strong (90%)**
+
+**What you nailed:**
+- Problem solved: Externalize configuration from application code ✅
+- Two consumption methods: environment variables and volume mounts ✅
+- Storage: ConfigMaps plaintext, Secrets base64 encoded ✅
+- Base64 reasons: PRIMARY = binary data support, SECONDARY = character safety ✅
+- Base64 is NOT security - trivial to decode ✅
+- Opaque type: default catch-all with no validation ✅
+- ALL Secret types use base64 (not just Opaque) ✅
+- CSI Driver vs External Secrets Operator: etcd storage difference ✅
+- Security: RBAC, etcd encryption, external secret managers ✅
+
+**What needed clarification:**
+- Initially mixed up consumption methods (mentioned CSI for basic mounts)
+- CSI driver is for external secrets only, not required for basic ConfigMap/Secret volume mounts
+- Flow walkthrough for CSI vs External Secrets needed prompting
+- Application restart implications for credential rotation
+
+**Key insights mastered:**
+- Base64 = transport encoding for binary data and special chars, NOT encryption
+- Opaque type = flexible catch-all (any keys), other types have validation
+- CSI Driver = secrets never touch etcd (most secure)
+- External Secrets Operator = secrets stored in etcd (more convenient)
+- File mounts auto-update, but apps typically need restart to use new values
+
+**Bonus topics covered:**
+- Operators pattern: custom controllers for custom resources (CRDs)
+- IRSA (IAM Roles for Service Accounts) for AWS auth
+- Rolling restart mechanism: `kubectl rollout restart deployment`
+- Practical reality: most apps cache credentials at startup
+
+**Result:** Strong understanding of configuration management and security tradeoffs. Ready to implement secret management for observability platform!
 
 ---
 

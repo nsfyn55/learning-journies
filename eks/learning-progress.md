@@ -199,6 +199,65 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
   - Resource limits are enforced by Linux kernel, not Kubernetes
   - CPU is compressible (throttle), memory is incompressible (kill)
 
+### ConfigMaps and Secrets (Deep Dive)
+- **The Problem ConfigMaps and Secrets Solve:**
+  - Need to externalize configuration from application code and container images
+  - Same image should run in different environments (dev/staging/prod)
+  - Secrets provide basic mechanism for sensitive data storage
+
+- **Two Consumption Methods:**
+  - Environment variables: injected at pod start (requires restart to change)
+  - Volume mounts: mounted as files in container (can auto-update)
+
+- **Storage in etcd:**
+  - ConfigMaps: stored as plaintext strings
+  - Secrets: stored as base64 encoded strings
+  - Base64 is NOT encryption - trivially decodable by anyone with RBAC permissions
+
+- **Why Base64 Encoding Exists:**
+  - PRIMARY reason: Binary data support (certificates, keys) - JSON/YAML can't handle binary
+  - SECONDARY reason: Character safety - special chars break JSON/YAML parsing
+  - Also: etcd string storage, API transport compatibility
+  - NOT for security!
+
+- **Secret Types:**
+  - `Opaque`: Default catch-all type, no validation, any keys allowed
+  - `kubernetes.io/tls`: Requires `tls.crt` and `tls.key` keys
+  - `kubernetes.io/basic-auth`: Requires `username` and `password` keys
+  - `kubernetes.io/dockerconfigjson`: Requires `.dockerconfigjson` key
+  - ALL types use base64 encoding - type only affects validation
+
+- **AWS Secrets Manager Integration:**
+  - **External Secrets Operator**: Custom controller that syncs AWS → K8s Secrets in etcd
+  - **CSI Driver**: Mounts secrets directly from AWS to pod, never stored in etcd (most secure)
+  - IRSA (IAM Roles for Service Accounts) for AWS authentication
+
+- **Security Considerations:**
+  - Base64 encoding provides NO security
+  - Default: Secrets stored unencrypted in etcd
+  - Required: RBAC to restrict Secret access
+  - Recommended: Enable etcd encryption at rest
+  - Best practice: Use external secret managers (AWS Secrets Manager + CSI Driver)
+
+- **Lifecycle and Updates:**
+  - Volume mounts: Kubernetes auto-updates files when Secret/ConfigMap changes
+  - Environment variables: Require pod restart to reflect changes
+  - Practical reality: Most apps cache config at startup, need restart anyway
+  - Rolling restart: `kubectl rollout restart deployment` (graceful, zero downtime)
+
+- **Operators Pattern (Bonus):**
+  - Operator = Custom controller + domain knowledge
+  - Same watch-and-reconcile pattern as built-in controllers
+  - Uses CRDs (Custom Resource Definitions) to extend Kubernetes API
+  - Examples: External Secrets Operator, Prometheus Operator
+
+- **Key Insights:**
+  - base64 = transport encoding (binary/char safety), NOT encryption
+  - Opaque type = maximum flexibility, no validation
+  - CSI Driver security > External Secrets Operator > Native K8s Secrets
+  - File mounts auto-update files, but apps typically need restart
+  - ConfigMaps = non-sensitive config, Secrets = sensitive (but properly secure them!)
+
 ---
 
 ## Topics Not Yet Covered ⏳
@@ -227,17 +286,49 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
 
 ---
 
-## Next Steps
+## Learning Pace & Timeline
 
-**Immediate:** Configuration and Secrets (15 min)
-- ConfigMaps for application configuration
-- Secrets for sensitive data
-- Environment variables and volume mounts
+**Current pace:** 2 topics per day
+**Progress:** 7/15 core fundamentals complete (47%)
+**Remaining:** 8 topics = 4 days to complete K8s fundamentals
+**Target completion:** Day 5 (core), Day 12 (expert level)
 
-**After:** Storage / Persistent Volumes (20 min)
-- Persistent Volumes (PV) and Persistent Volume Claims (PVC)
-- Storage Classes
-- StatefulSet storage requirements for databases
+---
+
+## Next Steps - Core Fundamentals Track
+
+**Day 1 (Next Session):**
+1. Health Checks and Lifecycle - Probes and graceful shutdown
+
+**Day 2:**
+3. Storage Fundamentals - PV, PVC, StorageClasses, StatefulSet storage
+4. RBAC and ServiceAccounts - Security and permissions model
+
+**Day 3:**
+5. Pod Security - SecurityContext, Pod Security Standards
+6. Network Policies - Network isolation between pods
+
+**Day 4:**
+7. Advanced Scheduling - Affinity, anti-affinity, taints, tolerations
+8. Resource Management - ResourceQuotas, LimitRanges, QoS classes
+
+**Day 5:**
+9. Disruptions and Availability - PodDisruptionBudgets, high availability
+
+**🎉 After Day 5:** Core Kubernetes fundamentals COMPLETE!
+
+**Days 6-12 (Optional):** Advanced topics for deep expertise
+- DaemonSets, Jobs, CronJobs
+- HPA, VPA, Cluster Autoscaler
+- Additional Service types
+- CRDs, Operators, Admission Controllers
+
+---
+
+## Immediate Next Topics
+
+**Up Next (Next Session):**
+- Health Checks and Lifecycle
 
 ---
 
@@ -289,6 +380,14 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
    - Deployment → ReplicaSet → Pods (enables versioning and rollback)
    - Resource limits enforced by Linux kernel (cgroups), not Kubernetes
    - CPU = compressible (throttle), Memory = incompressible (kill)
+
+9. **Configuration Externalization**
+   - ConfigMaps = non-sensitive config, Secrets = sensitive data
+   - base64 = transport encoding for binary/special chars, NOT security
+   - All Secret types use base64 - type field is for validation, not encoding
+   - Default K8s Secrets insecure (base64 + etcd) - need RBAC + etcd encryption
+   - Best security: CSI Driver bypasses etcd entirely (AWS → pod directly)
+   - Operators = custom controllers that extend K8s with CRDs
 
 ---
 
