@@ -144,6 +144,81 @@
 
 ---
 
+### Health Checks and Lifecycle
+**Status:** Deep dive complete
+**Topics covered:**
+- Three probe types: liveness, readiness, startup
+- Liveness: detects deadlocks/hangs, only checks internal health, restart on failure
+- Readiness: controls traffic, checks all dependencies, removes from service on failure
+- Startup: patient during startup phase, stops once app is running
+- Probe methods: HTTP GET, TCP Socket, Exec Command
+- Probe configuration: periodSeconds, failureThreshold, formula (total time = period × failures)
+- Lifecycle hooks: postStart (initialization), preStop (graceful shutdown)
+- Graceful shutdown flow: two parallel paths (stop traffic + shutdown container)
+- Race condition: shutdown can happen before traffic removal completes
+- Solution: preStop with sleep 15 (gives time for iptables/ALB updates)
+- Integration: readiness → Pod status → Endpoints → kube-proxy/ALB
+- Best practices: separate liveness from readiness, different endpoints, SIGTERM handling
+
+**Gaps identified:**
+- Advanced health check patterns for distributed systems
+- Custom probe implementations
+- Metrics and alerting for probe failures
+
+---
+
+### Storage Fundamentals
+**Status:** Deep dive complete
+**Topics covered:**
+- Problem solved: Persistent storage independent of pod lifecycle
+- Three core concepts: PV (actual storage), PVC (storage request), StorageClass (provisioning template)
+- Static vs dynamic provisioning (manual vs automatic EBS creation)
+- Dynamic provisioning flow: PVC → StorageClass → CSI Controller → AWS CreateVolume → PV
+- StatefulSet integration: volumeClaimTemplates with deterministic naming
+- StatefulSet deletion does NOT delete PVCs (safety feature)
+- Access modes: RWO (single node, EBS supports), RWX (many nodes, requires EFS)
+- Reclaim policies: Delete (data gone) vs Retain (data preserved)
+- Pod movement: CSI Node Plugin detaches/attaches EBS across nodes
+- Controllers: PVC Controller (watches, binds, provisions), StatefulSet Controller (creates PVCs/Pods)
+- CSI plugins are services (not watchers), called by controllers
+- Integration with probes: startup protects slow storage init, preStop allows flush
+
+**Gaps identified:**
+- EFS configuration and use cases
+- Volume snapshots and backups
+- Storage performance tuning
+- Multi-AZ storage considerations
+
+---
+
+### RBAC and ServiceAccounts
+**Status:** Deep dive complete
+**Topics covered:**
+- Problem solved: Fine-grained access control for humans and applications
+- Two identity systems: User Accounts (external, IAM) vs ServiceAccounts (K8s objects, namespaced)
+- Four RBAC building blocks: ServiceAccount (who), Role (what+where), RoleBinding (who+what), verbs (actions)
+- Role anatomy: apiGroups (resource grouping) + resources (object types) + verbs (actions)
+- API groups: core (""), apps, networking.k8s.io, rbac.authorization.k8s.io
+- Role vs ClusterRole: namespace-scoped vs cluster-wide permissions
+- RoleBinding can reference ServiceAccounts from different namespaces
+- ClusterRole + RoleBinding pattern: reusable role, grant per-namespace
+- ServiceAccount token mounted at /var/run/secrets/kubernetes.io/serviceaccount/token
+- API Server enforces RBAC: authentication → RBAC check → allow/deny
+- Update vs Patch: full replacement vs partial update (no race conditions)
+- Subresources: ingresses/status for status-only updates (prevents spec modification)
+- Watch trio: get, list, watch (needed by most controllers)
+- Default ServiceAccount: minimal permissions, use for apps that don't need API access
+- automountServiceAccountToken: false to disable for security
+- IRSA: Two-layer permissions (K8s RBAC + AWS IAM) for AWS API access
+
+**Gaps identified:**
+- User authentication methods (OIDC, certificates)
+- Advanced RBAC patterns (aggregated ClusterRoles)
+- RBAC troubleshooting and auditing
+- Service Account token projection and expiration
+
+---
+
 ## Surface-Level Knowledge (No Deep Dive Yet) 📖
 
 ### Service Types
@@ -161,15 +236,7 @@
 
 ## Not Yet Covered ⏳
 
-### Storage
-- Persistent Volumes (PV)
-- Persistent Volume Claims (PVC)
-- Storage Classes
-- StatefulSet storage
-
 ### Security
-- RBAC (Role-Based Access Control)
-- Service Accounts
 - Pod Security Standards
 - Network Policies (mentioned above)
 
@@ -191,42 +258,43 @@
 ## Learning Pace
 
 **Target:** 2 topics per day
-**Core fundamentals remaining:** 8 topics = 4 days
-**Optional expertise topics:** 13 topics = 6-7 days
-**Total to K8s mastery:** 2-3 weeks
+**Core fundamentals remaining:** 5 topics = 2.5 days
+**Progress:** 10/15 complete (67%)
+**Hardest topics (8-9/10 complexity):** ✅ Complete!
+**Total to K8s mastery:** 2.5 days to core, 2 weeks to expert
 
 ---
 
 ## Core Fundamentals Roadmap (Essential - 15 Topics Total)
 
-### ✅ Completed (7/15) - 47%
-1. Kubernetes Architecture
-2. Pod Networking
-3. Service Networking
-4. Ingress Controllers
-5. DNS / Service Discovery
-6. Workload Resources
-7. ConfigMaps and Secrets
+### ✅ Completed (10/15) - 67%
+1. Kubernetes Architecture - Complexity: 6/10
+2. Pod Networking - Complexity: 9/10 ⭐ (Hardest topic)
+3. Service Networking - Complexity: 8/10
+4. Ingress Controllers - Complexity: 7/10
+5. DNS / Service Discovery - Complexity: 7/10
+6. Workload Resources - Complexity: 7/10
+7. ConfigMaps and Secrets - Complexity: 5/10
+8. Health Checks and Lifecycle - Complexity: 6/10
+9. Storage Fundamentals - Complexity: 8/10
+10. RBAC and ServiceAccounts - Complexity: 6/10
 
-### 🔄 Remaining (8/15) - Target: 4 Days
+**Average completed complexity: 6.9/10** (Hardest topics behind you!)
 
-**Day 1 (cont.):**
-8. Health Checks and Lifecycle (15-20 min) - Liveness, readiness, graceful shutdown
+### 🔄 Remaining (5/15) - Target: 2.5 Days
+
+**Day 1 (Today):**
+11. Pod Security (15-20 min) - Complexity: 4/10
 
 **Day 2:**
-9. Storage Fundamentals (25-30 min) - PV, PVC, StorageClasses
-10. RBAC and ServiceAccounts (20-25 min) - Security and permissions
+12. Network Policies (20-25 min) - Complexity: 5/10
+13. Advanced Scheduling (20-25 min) - Complexity: 7/10
 
 **Day 3:**
-11. Pod Security (15-20 min) - SecurityContext, Pod Security Standards
-12. Network Policies (20-25 min) - Network isolation and firewall rules
+14. Resource Management (15-20 min) - Complexity: 5/10
+15. Disruptions and Availability (15-20 min) - Complexity: 6/10
 
-**Day 4:**
-13. Advanced Scheduling (20-25 min) - Affinity, taints, tolerations
-14. Resource Management (15-20 min) - Quotas, LimitRanges, QoS
-
-**Day 5:**
-15. Disruptions and Availability (15-20 min) - PodDisruptionBudgets, high availability
+**Average remaining complexity: 5.5/10** (Much easier than completed topics!)
 
 ---
 
@@ -480,6 +548,51 @@ Perfect mental model! Shows understanding of DNS hierarchy and forwarding.
 - Practical reality: most apps cache credentials at startup
 
 **Result:** Strong understanding of configuration management and security tradeoffs. Ready to implement secret management for observability platform!
+
+---
+
+### Health Checks and Lifecycle
+**Score: 🟢 Strong (94%)**
+
+**Learning journey:**
+- Question 1 (Liveness vs Readiness): 🟡 65% → 🟢 95% (after one correction)
+- Question 2 (Graceful Shutdown): 🟠 50% → 🟢 95% (after explanation)
+- Question 3 (Startup Probe Config): 🟡 75% → 🟢 92% (minor refinement)
+
+**What you absolutely crushed (final attempts):**
+- ✅ "A liveness check should only fail if a restart could solve the problem" (money quote!)
+- ✅ Liveness checks container health in isolation
+- ✅ Readiness checks everything needed to complete tasks
+- ✅ NFS mount example showing external dependency understanding
+- ✅ Two parallel paths during pod deletion: stop traffic + shutdown container
+- ✅ Race condition: shutdown can finish before traffic removal propagates
+- ✅ preStop sleep solution: gives time for kube-proxy and ALB to respond
+- ✅ Startup probe configuration: periodSeconds × failureThreshold = total time
+- ✅ Different timing requirements for different phases
+
+**Initial misconceptions corrected:**
+- ❌ First attempt: "Liveness could check same thing as readiness with longer threshold"
+- ✅ Correction: They check DIFFERENT things (internal vs everything), not just different timing
+- ❌ First attempt: Confused about why kubelet wasn't doing both activities
+- ✅ Correction: kubelet is local to one node, traffic control is distributed across cluster
+- ❌ First attempt: Said "75 second probe" instead of configuration parameters
+- ✅ Correction: Use periodSeconds and failureThreshold to calculate total time
+
+**Key insights mastered:**
+- Liveness = "Is the container the problem?" → restart if yes
+- Readiness = "Can you handle requests now?" → remove from traffic if no
+- Only fail liveness for problems that restart would fix
+- External dependencies (DB, NFS) should only affect readiness, not liveness
+- Two parallel paths exist because traffic control is distributed (many nodes, ALB zones)
+- preStop sleep is best practice to prevent race condition
+- Startup probe allows patient startup + aggressive health checks after
+
+**Your money quotes:**
+1. "A liveness check should only fail if a restart could solve the problem"
+2. "A container can be healthy without being able to service requests"
+3. "Here it is a good practice to set a wait to give kube-proxy and ingress controller enough time to respond"
+
+**Result:** Colleague-ready! Went from 50-75% initial attempts to 92-95% after single correction cycles. Excellent retention and quick learning.
 
 ---
 
