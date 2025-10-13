@@ -219,6 +219,31 @@
 
 ---
 
+### Network Policies
+**Status:** Deep dive complete
+**Topics covered:**
+- Problem solved: Flat network security risks (lateral movement, compliance, defense in depth)
+- Default behavior: allow-all switches to deny-all when policy selects a pod
+- Three main parts: podSelector (which pods), policyTypes (Ingress/Egress), ingress/egress rules
+- Multiple policies are OR'd (additive), within one policy entry conditions are AND'd
+- Ingress/egress selectors: podSelector, namespaceSelector, ipBlock
+- AWS VPC CNI doesn't support Network Policies (needs separate engine)
+- Calico architecture: calico-kube-controllers + Felix DaemonSet
+- Felix manages ipsets (IP-to-label mapping) and writes iptables rules
+- ipsets are Linux kernel feature (hash tables for efficient IP matching)
+- Enforcement at Layer 3 via iptables chains (cali-tw-* ingress, cali-fw-* egress)
+- Traffic flow: DNS → DNAT (kube-proxy) → egress check → VPC routing → ingress check
+- Pre-computed rules (no API queries at packet time)
+- DNS egress must be explicitly allowed if egress policy exists
+
+**Gaps identified:**
+- Cilium eBPF implementation details
+- Network Policy troubleshooting and debugging
+- Performance implications at scale
+- Advanced patterns (deny rules via empty allow lists)
+
+---
+
 ## Surface-Level Knowledge (No Deep Dive Yet) 📖
 
 ### Service Types
@@ -226,11 +251,6 @@
 - NodePort: Mentioned, explored in context of Ingress Instance mode
 - LoadBalancer: Mentioned, explored in context of Ingress problem space
 - ExternalName: Not covered
-
-### Network Policies
-- Pod-to-pod traffic restrictions
-- Security isolation
-- Egress controls
 
 ---
 
@@ -258,16 +278,16 @@
 ## Learning Pace
 
 **Target:** 2 topics per day
-**Core fundamentals remaining:** 5 topics = 2.5 days
-**Progress:** 10/15 complete (67%)
+**Core fundamentals remaining:** 4 topics = 2 days
+**Progress:** 11/15 complete (73%)
 **Hardest topics (8-9/10 complexity):** ✅ Complete!
-**Total to K8s mastery:** 2.5 days to core, 2 weeks to expert
+**Total to K8s mastery:** 2 days to core, 2 weeks to expert
 
 ---
 
 ## Core Fundamentals Roadmap (Essential - 15 Topics Total)
 
-### ✅ Completed (10/15) - 67%
+### ✅ Completed (11/15) - 73%
 1. Kubernetes Architecture - Complexity: 6/10
 2. Pod Networking - Complexity: 9/10 ⭐ (Hardest topic)
 3. Service Networking - Complexity: 8/10
@@ -278,20 +298,20 @@
 8. Health Checks and Lifecycle - Complexity: 6/10
 9. Storage Fundamentals - Complexity: 8/10
 10. RBAC and ServiceAccounts - Complexity: 6/10
+11. Network Policies - Complexity: 5/10 ✅
 
-**Average completed complexity: 6.9/10** (Hardest topics behind you!)
+**Average completed complexity: 6.7/10** (Hardest topics behind you!)
 
-### 🔄 Remaining (5/15) - Target: 2.5 Days
+### 🔄 Remaining (4/15) - Target: 2 Days
 
-**Day 1 (Today):**
-11. Pod Security (15-20 min) - Complexity: 4/10
+**Day 1 (Today - In Progress):**
+12. Pod Security (15-20 min) - Complexity: 4/10
 
 **Day 2:**
-12. Network Policies (20-25 min) - Complexity: 5/10
 13. Advanced Scheduling (20-25 min) - Complexity: 7/10
+14. Resource Management (15-20 min) - Complexity: 5/10
 
 **Day 3:**
-14. Resource Management (15-20 min) - Complexity: 5/10
 15. Disruptions and Availability (15-20 min) - Complexity: 6/10
 
 **Average remaining complexity: 5.5/10** (Much easier than completed topics!)
@@ -593,6 +613,55 @@ Perfect mental model! Shows understanding of DNS hierarchy and forwarding.
 3. "Here it is a good practice to set a wait to give kube-proxy and ingress controller enough time to respond"
 
 **Result:** Colleague-ready! Went from 50-75% initial attempts to 92-95% after single correction cycles. Excellent retention and quick learning.
+
+---
+
+### Network Policies
+**Score: 🟢 Strong (92%)**
+
+**Date: 2025-10-13**
+
+**Learning journey:**
+- Question 1 (Problem/Behavior): 🟡 80% → 🟢 95% (minor refinement)
+- Question 2 (Policy Anatomy): 🟢 90% (got concepts, missed policyTypes field)
+- Question 3 (Traffic Flow): 🟠 65% → 🟢 90% (after two retries with deep dives)
+- Question 4 (Multiple Policies): 🟢 100% (perfect!)
+- Question 5 (AWS/EKS Specifics): 🟡 70% → 🟢 92% (after refinement)
+
+**What you absolutely crushed:**
+- ✅ Flat network security problem (lateral movement, compliance, defense in depth)
+- ✅ Default behavior switch: allow-all → deny-all when policy selects pod
+- ✅ Multiple policies are OR'd (additive logic)
+- ✅ Traffic flow with Felix/ipsets/iptables integration
+- ✅ Felix manages ipset membership based on pod labels
+- ✅ ipsets are Linux kernel feature (not Calico-specific)
+- ✅ Layer 3 enforcement with pre-computed rules (no API queries at packet time)
+- ✅ VPC CNI separation of concerns (networking vs policy enforcement)
+
+**Initial gaps corrected:**
+- ❌ First attempt Q1: Said "all traffic explicitly DENY" (too broad)
+- ✅ Correction: Only pods matched by podSelector switch to deny-all
+- ❌ First attempt Q3: Said traffic would be allowed (missed that frontend ≠ backend label)
+- ✅ Correction: Understood complete flow including ipset membership checks
+- ❌ Initially confused: "Does Felix query API at packet time for labels?"
+- ✅ Correction: Felix pre-populates ipsets, packet time is pure Layer 3 lookup
+
+**Key insights mastered:**
+- podSelector scope: Policy only affects pods it selects, not cluster-wide
+- policyTypes field: Declares which traffic types are controlled (Ingress/Egress)
+- Multiple policies OR'd: Union of rules, composable without conflict
+- Within policy AND'd: Conditions in same `from` entry must all match
+- ipsets = IP-to-label mapping maintained by Felix via continuous watch
+- Calico chains: cali-tw-* (to-workload/ingress), cali-fw-* (from-workload/egress)
+- Traffic flow ordering: DNS → DNAT → egress check → VPC → ingress check
+- DNS egress must be whitelisted if egress policy exists
+
+**Your money realizations:**
+1. "Felix/Calico's job is to manage membership in those ipsets" (spot on!)
+2. Understanding ipsets as hash tables for O(1) lookup efficiency
+3. Recognizing traffic evaluation happens BEFORE reaching destination pod
+
+**Result:** Strong understanding of Network Policies from problem space to technical implementation. Ready to design and implement policies for observability platform!
 
 ---
 
