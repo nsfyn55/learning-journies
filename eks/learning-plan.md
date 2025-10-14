@@ -244,6 +244,30 @@
 
 ---
 
+### Pod Security
+**Status:** Deep dive complete
+**Topics covered:**
+- Problem solved: Control container privileges, minimize blast radius, defense-in-depth
+- Two mechanisms: SecurityContext (pod/container specs) + Pod Security Standards (namespace enforcement)
+- SecurityContext: pod-level (applies to all) and container-level (overrides pod-level)
+- Key fields: runAsUser, runAsGroup, fsGroup, runAsNonRoot, allowPrivilegeEscalation, readOnlyRootFilesystem
+- Linux capabilities: Fine-grained privileges (NET_BIND_SERVICE, CHOWN, etc.), drop ALL then add back
+- fsGroup: Enables non-root containers to access volumes (kubelet chowns to root:fsGroup)
+- fsGroup added as supplementary group to all containers in pod
+- Three Pod Security Standards: Privileged (no restrictions), Baseline (blocks dangerous), Restricted (heavily locked down)
+- Pod Security Admission Controller: Enforces standards at Pod creation time (not Deployment)
+- Three modes: enforce (block), audit (log), warn (show warning)
+- Async enforcement: Deployment succeeds, Pod creation fails, check ReplicaSet events
+- Best practices: Baseline for most apps, Restricted for sensitive workloads, Privileged only for system components
+
+**Gaps identified:**
+- Advanced capability use cases
+- Pod Security Admission customization
+- Migration strategies for existing workloads
+- seccomp, AppArmor, SELinux profiles
+
+---
+
 ## Surface-Level Knowledge (No Deep Dive Yet) 📖
 
 ### Service Types
@@ -257,8 +281,8 @@
 ## Not Yet Covered ⏳
 
 ### Security
-- Pod Security Standards
-- Network Policies (mentioned above)
+- ✅ Pod Security Standards (Complete)
+- ✅ Network Policies (Complete)
 
 ### Observability Specifics
 - Prometheus architecture
@@ -278,16 +302,16 @@
 ## Learning Pace
 
 **Target:** 2 topics per day
-**Core fundamentals remaining:** 4 topics = 2 days
-**Progress:** 11/15 complete (73%)
+**Core fundamentals remaining:** 3 topics = 1.5 days
+**Progress:** 12/15 complete (80%)
 **Hardest topics (8-9/10 complexity):** ✅ Complete!
-**Total to K8s mastery:** 2 days to core, 2 weeks to expert
+**Total to K8s mastery:** 1.5 days to core, 2 weeks to expert
 
 ---
 
 ## Core Fundamentals Roadmap (Essential - 15 Topics Total)
 
-### ✅ Completed (11/15) - 73%
+### ✅ Completed (12/15) - 80%
 1. Kubernetes Architecture - Complexity: 6/10
 2. Pod Networking - Complexity: 9/10 ⭐ (Hardest topic)
 3. Service Networking - Complexity: 8/10
@@ -298,23 +322,21 @@
 8. Health Checks and Lifecycle - Complexity: 6/10
 9. Storage Fundamentals - Complexity: 8/10
 10. RBAC and ServiceAccounts - Complexity: 6/10
-11. Network Policies - Complexity: 5/10 ✅
+11. Network Policies - Complexity: 5/10
+12. Pod Security - Complexity: 4/10 ✅
 
-**Average completed complexity: 6.7/10** (Hardest topics behind you!)
+**Average completed complexity: 6.5/10** (Hardest topics behind you!)
 
-### 🔄 Remaining (4/15) - Target: 2 Days
+### 🔄 Remaining (3/15) - Target: 1.5 Days
 
-**Day 1 (Today - In Progress):**
-12. Pod Security (15-20 min) - Complexity: 4/10
-
-**Day 2:**
+**Day 1 (Next Session):**
 13. Advanced Scheduling (20-25 min) - Complexity: 7/10
 14. Resource Management (15-20 min) - Complexity: 5/10
 
-**Day 3:**
+**Day 2:**
 15. Disruptions and Availability (15-20 min) - Complexity: 6/10
 
-**Average remaining complexity: 5.5/10** (Much easier than completed topics!)
+**Average remaining complexity: 6/10** (Moderate difficulty!)
 
 ---
 
@@ -662,6 +684,58 @@ Perfect mental model! Shows understanding of DNS hierarchy and forwarding.
 3. Recognizing traffic evaluation happens BEFORE reaching destination pod
 
 **Result:** Strong understanding of Network Policies from problem space to technical implementation. Ready to design and implement policies for observability platform!
+
+---
+
+### Pod Security
+**Score: 🟢 Strong (88%)**
+
+**Date: 2025-10-14**
+
+**Learning journey:**
+- Question 1 (SecurityContext): 🟡 70% → 🟢 100% (after fsGroup deep dive)
+- Question 2 (Problem Space): 🟢 90%
+- Question 3 (Real-World Fix): 🟡 70% (conceptual correct, lacked specifics)
+- Question 4 (Pod Security Standards): 🟢 95%
+- Question 5 (Enforcement Flow): 🟢 92% (after refresher)
+- Question 6 (Production Config): 🟡 65% → 🟢 98% (second attempt)
+
+**What you absolutely crushed:**
+- ✅ Blast radius framing (consistent mental model throughout)
+- ✅ Risk-based security decisions (Privileged for system, Baseline for apps, Restricted for sensitive)
+- ✅ Async enforcement flow (Deployment succeeds, Pod creation fails, ReplicaSet retries)
+- ✅ Container-level overrides pod-level SecurityContext
+- ✅ fsGroup mental model after deep dive (enables non-root volume access)
+- ✅ Principle of least privilege thinking
+- ✅ Defense-in-depth (not just attacks, but bugs too)
+
+**Initial gaps corrected:**
+- ❌ Forgot fsGroup added as supplementary group to ALL containers
+- ❌ Didn't know Linux capabilities (NET_BIND_SERVICE for port 80)
+- ❌ Confused "baseline" standard with capability name
+- ❌ Initially used generic UIDs instead of image-specific (postgres = 999)
+- ❌ Needed refresher on when PSA checks happen (Pod creation, not Deployment)
+
+**Key insights mastered:**
+- fsGroup = "volume access group" that enables non-root containers (vs running as root)
+- fsGroup added to all containers as supplementary group (primary group can differ)
+- Capabilities are fine-grained (NET_BIND_SERVICE, CHOWN) - drop ALL, add back minimum
+- Pod Security Admission Controller enforces at Pod creation (async from Deployment)
+- ReplicaSet remains in etcd, keeps retrying, errors in events
+- Baseline = recommended default, Restricted = high-security, Privileged = system only
+- readOnlyRootFilesystem requires writable volumes (emptyDir for /tmp)
+
+**Your money quotes:**
+1. "The blast radius can be devastating. Therefore it is worth the extra complexity of locking them down."
+2. "Why can't you give both app and sidecar the same UID?" (critical thinking about necessity vs convention)
+3. "If I put 2000 wouldn't 999 get this as a supplementary group?" (testing mental model with alternatives)
+
+**Strongest moments:**
+- Catching async behavior implications (ReplicaSet in etcd?)
+- Questioning fsGroup design (could use same UID) - showed deep thinking
+- Risk-based reasoning for Pod Security Standards per namespace
+
+**Result:** Colleague-ready on concepts and best practices. Would reference documentation for specific capabilities and image UIDs, but understands the security model deeply.
 
 ---
 
