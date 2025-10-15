@@ -22,7 +22,7 @@ This is a **learning repository** for EKS/Kubernetes concepts with the goal of b
 
 ## Key Context for Future Development
 
-### Topics Mastered (7/15 Core Fundamentals - 47%)
+### Topics Mastered (13/15 Core Fundamentals - 87%)
 The owner has deep understanding of:
 - Kubernetes architecture (control plane and data plane)
 - Pod networking with AWS VPC CNI (ENIs, veth pairs, network namespaces)
@@ -31,33 +31,31 @@ The owner has deep understanding of:
 - DNS / Service Discovery (CoreDNS, Prometheus discovery, watch mechanisms)
 - Workload Resources (Deployments, StatefulSets, resource limits, cgroups)
 - ConfigMaps and Secrets (base64 encoding, AWS Secrets Manager, CSI Driver, Operators)
+- Health Checks and Lifecycle (liveness, readiness, graceful shutdown)
+- Storage Fundamentals (PV, PVC, StorageClasses, dynamic provisioning)
+- RBAC and ServiceAccounts (roles, bindings, IRSA)
+- Network Policies (Calico, ipsets, policy logic)
+- Pod Security (SecurityContext, fsGroup, Pod Security Standards)
+- Advanced Scheduling (taints/tolerations, affinity, anti-affinity)
 
 ### Critical Mental Models
-1. **Watch Loop Pattern** - Controllers continuously watch API server and reconcile state
-2. **Pod IPs are ephemeral** - Services provide stable ClusterIPs for abstraction
-3. **AWS VPC CNI uses real VPC IPs** - Secondary IPs on ENIs form warm pool for pods
-4. **iptables rewrites ClusterIP → Pod IPs** - Virtual ClusterIPs never travel on network
-5. **StatefulSets = Stable DNS names, NOT stable IPs** - DNS persists across node moves
-6. **Deployments use ReplicaSets for versioning** - Each update creates new ReplicaSet
-7. **Resource limits enforced by kernel (cgroups)** - CPU throttling, memory OOM kill
-8. **base64 = encoding, NOT encryption** - Trivially decodable, use etcd encryption + RBAC + external secret managers
-9. **CSI Driver bypasses etcd** - Most secure for secrets (AWS → pod directly, never stored in cluster)
+See learning-progress.md for complete list (19 mental models). Key highlights:
+- **Watch Loop Pattern** - Controllers continuously watch API server and reconcile state
+- **Pod IPs are ephemeral** - Services provide stable ClusterIPs for abstraction
+- **Taints are defensive** - Repel ALL pods unless they tolerate
+- **Scheduling constraints are AND'd** - All must be satisfied simultaneously
+- **topologyKey defines "near"** - hostname = same node, zone = same AZ
 
 ### Current Learning Plan
-**Pace:** 2 topics per day
-**Timeline:** 4 days to complete core K8s fundamentals (8 topics remaining)
+**Progress:** 13/15 topics complete (87%)
+**Remaining:** 2 topics (~1 day)
+**Average Retention:** 92%
 
-**Next priorities (Days 1-4):**
-1. Health Checks and Lifecycle
-2. Storage Fundamentals (PV, PVC, StorageClasses)
-3. RBAC and ServiceAccounts
-4. Pod Security
-5. Network Policies
-6. Advanced Scheduling
-7. Resource Management
-8. Disruptions and Availability
+**Next priorities:**
+1. Resource Management (ResourceQuotas, LimitRanges, QoS)
+2. Disruptions and Availability (PodDisruptionBudgets, HA patterns)
 
-**After Day 4:** Begin observability platform implementation (Prometheus + Grafana)
+**After completion:** Begin observability platform implementation (Prometheus + Grafana)
 
 ## Development Commands
 
@@ -79,7 +77,27 @@ The owner has deep understanding of:
 
 ## Communication Preferences
 
-### Learning Sessions
-- Track learning progress and keep markdown files up to date
-- **Always restate remaining questions at the end of explanations** - helps maintain context and flow during learning sessions
-- When explaining complex topics with multiple follow-up questions, conclude with a clear list of what's still pending
+### Learning Sessions - EFFECTIVE METHODOLOGY (Use This!)
+The owner learns best with this proven approach:
+
+1. **Small Topics**: Break down each major topic into digestible sub-topics
+2. **One at a Time**: Present ONE concept, wait for questions/clarification, then move to next
+3. **Immediate Reinforcement**: After explaining each sub-topic, ask if there are questions
+4. **Quiz Before Moving On**: Test understanding with scenario-based questions before marking topic complete
+5. **Allow Self-Explanation**: Let the owner explain concepts back to confirm understanding
+
+**DO NOT:**
+- Dump all sub-topics at once (overwhelming cognitive load)
+- Move to next concept without confirmation of understanding
+- Skip the quiz/retention check phase
+
+**Example flow:**
+1. Explain Taints → answer questions → confirm understanding
+2. Explain Tolerations → answer questions → confirm understanding
+3. Explain NodeSelectors → answer questions → confirm understanding
+4. Quiz on all three → grade answers → update learning docs
+
+### Documentation
+- Track learning progress and keep markdown files up to date after each topic completion
+- Update retention scores in both learning-plan.md and learning-progress.md
+- Add new mental models to learning-progress.md as they emerge

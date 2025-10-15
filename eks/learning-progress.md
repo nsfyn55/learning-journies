@@ -3,7 +3,7 @@
 ## Overall Goal
 Build observability platform for apps running in EKS using Prometheus and AWS hosted Grafana.
 
-## Progress: 12/15 Core Topics (80%)
+## Progress: 13/15 Core Topics (87%)
 
 ---
 
@@ -24,6 +24,10 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
 13. **Network Policies**: allow-all → deny-all when policy selects pod, Felix manages ipsets
 14. **Pod Security**: fsGroup enables non-root volume access, Baseline = default, Restricted = sensitive
 15. **Pod Security Admission**: Checks at Pod creation (async), Deployment succeeds, ReplicaSet retries
+16. **Taints are defensive**: Repel ALL pods unless they tolerate, tolerations are pod-specific exceptions
+17. **Scheduling constraints are AND'd**: nodeSelector + affinity + taints must all be satisfied
+18. **topologyKey defines "near"**: hostname = same node, zone = same AZ, region = same region
+19. **Anti-affinity prevents co-location**: Required can block scheduling, preferred is best-effort
 
 ---
 
@@ -90,15 +94,20 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
 - Pod Security Standards: Privileged (system) / Baseline (default) / Restricted (sensitive)
 - Pod Security Admission: enforces at Pod creation, check ReplicaSet events for errors
 
+### 13. Advanced Scheduling (9/10) ⭐
+- Taints (node): repel ALL pods, Tolerations (pod): allow specific exceptions
+- NodeSelector: simple hard constraint, AND matching only
+- Node Affinity: complex expressions (In/NotIn/Exists), required (hard) vs preferred (weighted)
+- Pod Affinity: schedule NEAR other pods based on labelSelector + topologyKey
+- Pod Anti-Affinity: schedule AWAY from other pods (HA spreading across nodes/zones)
+- All constraints AND'd together, IgnoredDuringExecution (no eviction after placement)
+
 ---
 
-## Remaining Topics (3)
+## Remaining Topics (2)
 
 **Next session:**
-- Advanced Scheduling (7/10)
 - Resource Management (5/10)
-
-**After that:**
 - Disruptions and Availability (6/10)
 
 ---
@@ -113,3 +122,4 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
 - Health Checks: 🟢 94%
 - Network Policies: 🟢 92%
 - Pod Security: 🟢 88%
+- Advanced Scheduling: 🟢 95%

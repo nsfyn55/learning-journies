@@ -1,15 +1,15 @@
 # EKS/Kubernetes Learning Plan
 
-## Progress: 12/15 Core Topics Complete (80%)
+## Progress: 13/15 Core Topics Complete (87%)
 
-**Remaining:** 3 topics (~1.5 days)
-**Next:** Advanced Scheduling, Resource Management, Disruptions & Availability
+**Remaining:** 2 topics (~1 day)
+**Next:** Resource Management, Disruptions & Availability
 
 ---
 
 ## Core Fundamentals Roadmap
 
-### ✅ Completed (12/15)
+### ✅ Completed (13/15)
 1. Kubernetes Architecture (6/10)
 2. Pod Networking (9/10) ⭐
 3. Service Networking (8/10)
@@ -22,9 +22,9 @@
 10. RBAC and ServiceAccounts (6/10)
 11. Network Policies (5/10)
 12. Pod Security (4/10)
+13. Advanced Scheduling (9/10) ⭐
 
-### 🔄 Remaining (3/15)
-13. Advanced Scheduling (7/10) - Affinity, taints/tolerations, node selectors
+### 🔄 Remaining (2/15)
 14. Resource Management (5/10) - ResourceQuotas, LimitRanges, QoS
 15. Disruptions and Availability (6/10) - PodDisruptionBudgets, HA patterns
 
@@ -92,6 +92,14 @@
 - Standards: Privileged/Baseline/Restricted
 - Pod Security Admission: checks at Pod creation (async)
 
+### Advanced Scheduling
+- Taints (node-level) repel ALL pods, tolerations (pod-level) allow exceptions
+- NodeSelector: simple hard constraint (AND matching)
+- Node Affinity: complex expressions (In, NotIn, Exists), required/preferred
+- Pod Affinity: schedule NEAR other pods, topologyKey defines "near"
+- Pod Anti-Affinity: schedule AWAY from other pods (HA spreading)
+- All constraints are AND'd together
+
 ---
 
 ## Retention Scores (Latest)
@@ -110,8 +118,9 @@
 | RBAC | - | - |
 | Network Policies | 🟢 92% | 2025-10-13 |
 | Pod Security | 🟢 88% | 2025-10-14 |
+| Advanced Scheduling | 🟢 95% | 2025-10-15 |
 
-**Average:** 🟢 91% (Strong)
+**Average:** 🟢 92% (Strong)
 
 ---
 
