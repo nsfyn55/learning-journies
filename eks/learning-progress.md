@@ -3,7 +3,7 @@
 ## Overall Goal
 Build observability platform for apps running in EKS using Prometheus and AWS hosted Grafana.
 
-## Progress: 13/15 Core Topics (87%)
+## Progress: 15/15 Core Topics (100%) 🎉
 
 ---
 
@@ -28,6 +28,11 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
 17. **Scheduling constraints are AND'd**: nodeSelector + affinity + taints must all be satisfied
 18. **topologyKey defines "near"**: hostname = same node, zone = same AZ, region = same region
 19. **Anti-affinity prevents co-location**: Required can block scheduling, preferred is best-effort
+20. **QoS is inferred, not set**: Guaranteed (request=limit), Burstable (request≠limit), BestEffort (no resources)
+21. **LimitRange validates pods, ResourceQuota tracks namespace totals**: LimitRange runs first (mutation), then ResourceQuota (admission check)
+22. **PDBs only protect against voluntary disruptions**: Can't prevent node crashes, but can control drain/update pace
+23. **maxSurge: 0 forces terminate-then-create**: maxSurge > 0 allows create-then-terminate (safer)
+24. **HA is a stack, not a feature**: Replicas + anti-affinity + RollingUpdate + PDB + QoS work together
 
 ---
 
@@ -102,13 +107,26 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
 - Pod Anti-Affinity: schedule AWAY from other pods (HA spreading across nodes/zones)
 - All constraints AND'd together, IgnoredDuringExecution (no eviction after placement)
 
+### 14. Resource Management (9/10) ⭐
+- QoS Classes: Guaranteed (request=limit for ALL resources), Burstable (mixed), BestEffort (none)
+- QoS determines eviction priority: BestEffort killed first, Guaranteed last
+- LimitRange: namespace-scoped per-pod constraints (defaults, min/max, maxLimitRequestRatio)
+- ResourceQuota: namespace-scoped aggregate limits (requests.cpu, limits.memory, pod count)
+- Admission order: LimitRange (validates/defaults) → ResourceQuota (checks totals) → Scheduler
+
+### 15. Disruptions and Availability (8/10)
+- Voluntary disruptions: admin-initiated (drain, update), Involuntary: failures (hardware, OOM)
+- PodDisruptionBudget: minAvailable or maxUnavailable for voluntary disruptions only
+- Eviction API checks PDB, returns 429 if violated (drain blocks/waits)
+- RollingUpdate: maxUnavailable (pace), maxSurge (extra capacity), can't both be 0
+- maxSurge: 0 = terminate then create, maxSurge > 0 = create then terminate
+- Complete HA Stack: replicas + node anti-affinity + AZ anti-affinity + RollingUpdate + PDB + Guaranteed QoS
+
 ---
 
-## Remaining Topics (2)
+## Core Fundamentals Complete! 🎉
 
-**Next session:**
-- Resource Management (5/10)
-- Disruptions and Availability (6/10)
+**Next Phase:** Begin observability platform implementation (Prometheus + Grafana)
 
 ---
 
@@ -123,3 +141,7 @@ Build observability platform for apps running in EKS using Prometheus and AWS ho
 - Network Policies: 🟢 92%
 - Pod Security: 🟢 88%
 - Advanced Scheduling: 🟢 95%
+- Resource Management: 🟢 95%
+- Disruptions & Availability: 🟢 90%
+
+**Overall Average: 🟢 93%**

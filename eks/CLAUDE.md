@@ -22,7 +22,7 @@ This is a **learning repository** for EKS/Kubernetes concepts with the goal of b
 
 ## Key Context for Future Development
 
-### Topics Mastered (13/15 Core Fundamentals - 87%)
+### Topics Mastered (15/15 Core Fundamentals - 100%) 🎉
 The owner has deep understanding of:
 - Kubernetes architecture (control plane and data plane)
 - Pod networking with AWS VPC CNI (ENIs, veth pairs, network namespaces)
@@ -37,25 +37,28 @@ The owner has deep understanding of:
 - Network Policies (Calico, ipsets, policy logic)
 - Pod Security (SecurityContext, fsGroup, Pod Security Standards)
 - Advanced Scheduling (taints/tolerations, affinity, anti-affinity)
+- Resource Management (QoS classes, LimitRanges, ResourceQuotas)
+- Disruptions and Availability (PDBs, RollingUpdate, HA patterns)
 
 ### Critical Mental Models
-See learning-progress.md for complete list (19 mental models). Key highlights:
+See learning-progress.md for complete list (24 mental models). Key highlights:
 - **Watch Loop Pattern** - Controllers continuously watch API server and reconcile state
 - **Pod IPs are ephemeral** - Services provide stable ClusterIPs for abstraction
 - **Taints are defensive** - Repel ALL pods unless they tolerate
 - **Scheduling constraints are AND'd** - All must be satisfied simultaneously
 - **topologyKey defines "near"** - hostname = same node, zone = same AZ
+- **QoS is inferred, not set** - Determined by request/limit equality
+- **LimitRange validates pods, ResourceQuota tracks totals** - Two-layer governance
+- **PDBs only protect voluntary disruptions** - Can't prevent crashes, controls drain pace
+- **HA is a stack** - Multiple layers working together, not a single feature
 
-### Current Learning Plan
-**Progress:** 13/15 topics complete (87%)
-**Remaining:** 2 topics (~1 day)
-**Average Retention:** 92%
+### Learning Status
+**Progress:** 15/15 core topics complete (100%) 🎉
+**Average Retention:** 93%
 
-**Next priorities:**
-1. Resource Management (ResourceQuotas, LimitRanges, QoS)
-2. Disruptions and Availability (PodDisruptionBudgets, HA patterns)
+**Core fundamentals completed!**
 
-**After completion:** Begin observability platform implementation (Prometheus + Grafana)
+**Next Phase:** Begin observability platform implementation (Prometheus + Grafana)
 
 ## Development Commands
 
@@ -95,7 +98,9 @@ The owner learns best with this proven approach:
 1. Explain Taints → answer questions → confirm understanding
 2. Explain Tolerations → answer questions → confirm understanding
 3. Explain NodeSelectors → answer questions → confirm understanding
-4. Quiz on all three → grade answers → update learning docs
+4. Quiz on all three → present ONE question at a time → grade answers → update learning docs
+
+**IMPORTANT:** Present quiz questions ONE AT A TIME, not all at once. Wait for answer before presenting next question.
 
 ### Documentation
 - Track learning progress and keep markdown files up to date after each topic completion

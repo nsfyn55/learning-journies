@@ -1,15 +1,15 @@
 # EKS/Kubernetes Learning Plan
 
-## Progress: 13/15 Core Topics Complete (87%)
+## Progress: 15/15 Core Topics Complete (100%) 🎉
 
-**Remaining:** 2 topics (~1 day)
-**Next:** Resource Management, Disruptions & Availability
+**Status:** Core fundamentals completed!
+**Next:** Begin observability platform implementation (Prometheus + Grafana)
 
 ---
 
 ## Core Fundamentals Roadmap
 
-### ✅ Completed (13/15)
+### ✅ Completed (15/15) 🎉
 1. Kubernetes Architecture (6/10)
 2. Pod Networking (9/10) ⭐
 3. Service Networking (8/10)
@@ -23,10 +23,8 @@
 11. Network Policies (5/10)
 12. Pod Security (4/10)
 13. Advanced Scheduling (9/10) ⭐
-
-### 🔄 Remaining (2/15)
-14. Resource Management (5/10) - ResourceQuotas, LimitRanges, QoS
-15. Disruptions and Availability (6/10) - PodDisruptionBudgets, HA patterns
+14. Resource Management (9/10) ⭐
+15. Disruptions and Availability (8/10)
 
 ---
 
@@ -100,6 +98,20 @@
 - Pod Anti-Affinity: schedule AWAY from other pods (HA spreading)
 - All constraints are AND'd together
 
+### Resource Management
+- QoS Classes: Guaranteed (request=limit), Burstable (request≠limit), BestEffort (no resources)
+- QoS inferred from resource settings, determines eviction priority
+- LimitRange: namespace-scoped per-pod constraints (defaults, min/max, ratios)
+- ResourceQuota: namespace-scoped aggregate limits (total requests/limits, object counts)
+- Order: LimitRange validates/mutates → ResourceQuota checks totals → Scheduler places
+
+### Disruptions and Availability
+- Voluntary (admin-initiated: drains, updates) vs Involuntary (hardware failures)
+- PodDisruptionBudgets: minAvailable or maxUnavailable during voluntary disruptions
+- PDBs block eviction API (drain waits), don't prevent involuntary failures
+- RollingUpdate: maxUnavailable + maxSurge control update pace
+- HA Stack: replicas + anti-affinity (nodes/AZs) + RollingUpdate + PDB + Guaranteed QoS
+
 ---
 
 ## Retention Scores (Latest)
@@ -119,8 +131,10 @@
 | Network Policies | 🟢 92% | 2025-10-13 |
 | Pod Security | 🟢 88% | 2025-10-14 |
 | Advanced Scheduling | 🟢 95% | 2025-10-15 |
+| Resource Management | 🟢 95% | 2025-10-17 |
+| Disruptions & Availability | 🟢 90% | 2025-10-17 |
 
-**Average:** 🟢 92% (Strong)
+**Average:** 🟢 93% (Strong)
 
 ---
 
